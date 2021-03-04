@@ -120,24 +120,43 @@ class Frontity_Headtags {
 		$requested_url = null;
 		$do_redirect   = false;
 
+		// execute wp_head in order to get wp_footer
+		// see: https://wordpress.stackexchange.com/a/267005
+
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		do_action( 'wp_head' );
 
 		// Get rendered <head> content.
-		$html = ob_get_clean();
+		$head_html = ob_get_contents();
+		ob_clean();
+		
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		do_action( 'wp_footer' );
+
+		// Get rendered footer content.
+		$footer_html = ob_get_clean();
 
 		// Filter the <head> HTML code.
-		$html = apply_filters( 'frontity_headtags_html', $html );
+		$head_html = apply_filters( 'frontity_headtags_html', $head_html );
 
 		// Parse the HTML to create an array of head tags.
-		$headtags = $this->parse( $html );
+		$headtags = $this->parse( $head_html );
 
 		// Filter not desired head tags.
 		$headtags = apply_filters( 'frontity_headtags_result', $headtags );
 
+		// Filter the footer HTML code.
+		$footer_html = apply_filters( 'frontity_headtags_html', $footer_html );
+
+		// Parse the HTML to create an array of footer tags.
+		$footertags = $this->parse( $footer_html );
+
+		// Filter not desired footer tags.
+		$footertags = apply_filters( 'frontity_headtags_result', $footertags );
+
 		$this->restore_query();
 
-		return $headtags;
+		return array( 'head' => $headtags, 'footer' => $footertags );
 	}
 
 
